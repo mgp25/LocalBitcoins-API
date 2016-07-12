@@ -211,8 +211,10 @@ class LocalBitcoin:
     def sendRequest(self, endpoint, params, method):
 
         params_encoded = ''
-        if params != '' and method == 'get':
-            params_encoded = '?' + urllib.urlencode(params)
+        if params != '':
+            params_encoded = urllib.urlencode(params)
+            if method == 'get':
+              params_encoded = '?' + params_encoded
 
         now = datetime.utcnow()
         epoch = datetime.utcfromtimestamp(0)
@@ -233,7 +235,7 @@ class LocalBitcoin:
 
         if self.debug == True:
             print 'REQUEST: ' + self.baseurl + endpoint
-            print 'PARAMS: ' + params
+            print 'PARAMS: ' + str(params)
             print 'METHOD: ' + method
             print 'RESPONSE: ' + response.text
 
