@@ -155,6 +155,19 @@ class LocalBitcoin:
         return self.sendRequest('/api/recent_messages/', '', 'get')
 
     """
+    Gives feedback to user.
+    Possible feedback values are: trust, positive, neutral, block, block_without_feedback as strings.
+    You may also set feedback message field with few exceptions. Feedback block_without_feedback clears the message and with block the message is mandatory.
+    
+    """
+    def postFeedbackToUser(self, username, feedback, message = None):
+        post = {'feedback': feedback}
+        if message != None:
+          post = {'feedback': feedback, 'msg': message}
+        
+        return self.sendRequest('/api/feedback/' + username + '/', post, 'post')
+    
+    """
     Gets information about the token owner's wallet balance.
     """
     def getWallet(self):
