@@ -3,7 +3,7 @@ import json
 import urllib
 import hashlib
 import requests
-from urllib import urlencode
+from urllib import parse
 from datetime import datetime
 
 
@@ -21,6 +21,13 @@ class LocalBitcoin:
     """
     def getAccountInfo(self, username):
         return self.sendRequest('/api/account_info/' + username + '/', '', 'get')
+
+    """
+    Returns recent notifications.
+    """
+
+    def getNotifications(self):
+        return self.sendRequest('/api/notifications/', '', 'get')
 
     """
     Return the information of the currently logged in user (the owner of authentication token).
@@ -91,7 +98,7 @@ class LocalBitcoin:
     """
     Post a message to contact
     """
-    def postMessageToContact(self, contact_id, message):
+    def postMessageToContact(self, contact_id, message, document=None):
         return self.sendRequest('/api/contact_message_post/' + contact_id + '/', {'msg': message}, 'post')
 
     """
@@ -164,9 +171,8 @@ class LocalBitcoin:
         post = {'feedback': feedback}
         if message != None:
           post = {'feedback': feedback, 'msg': message}
-        
         return self.sendRequest('/api/feedback/' + username + '/', post, 'post')
-    
+
     """
     Gets information about the token owner's wallet balance.
     """
@@ -220,12 +226,47 @@ class LocalBitcoin:
     """
     def getOwnAds(self):
         return self.sendRequest('/api/ads/', '', 'post')
+    """
+    This endpoint lets you edit an ad given the ad id and all the required fiends as designated by the API.
+    If you just want to update the equation there is a better endpoint for that, this one takes a lot of LBC resources.
+    """
+    def editAd(self, ad_id, lat, bank_name, price_equation, lon, countrycode, opening_hours, msg, max_amount, track_max_amount, visible):
+        return self.sendRequest('/api/ad/' + ad_id + '/', {'lat': lat,'bank_name': bank_name,'price_equation': price_equation,'lon': lon,'countrycode': countrycode, 'opening_hours': opening_hours, 'msg': msg, 'max_amount': max_amount, 'track_max_amount': track_max_amount, 'visible': visible}, 'post')
 
+    """
+    Creates a new invoice under the LBC merchant services page.
+    """
+    def newInvoice(self, currency, amount, description):
+        return self.sendRequest('/api/merchant/new_invoice/', {'currency': currency, 'amount': amount, 'description': description,}, 'post')
+
+    """
+    Marks a users id as verified based on an open contact id.
+    """
+    def markIdentityVerified(self, contact_id):
+        return self.sendRequest('/api/contact_mark_identified/' + contact_id + '/', '', 'post')
+
+    """
+    Get all the details of an ad based on its ID, can be any ad.
+    """
+    def getAd(self, ad_id):
+        return self.sendRequest('/api/ad-get/' + ad_id + '/', '', 'get')
+
+    """
+    Change an ad's pricing equation to something else.
+    """
+    def changeEquation(self, ad_id, equation):
+        return self.sendRequest('/api/ad-equation/{ad_id}/'.format(ad_id=ad_id), {'price_equation': equation}, 'post')
+
+
+    """
+    Main driver.
+    """
     def sendRequest(self, endpoint, params, method):
 
         params_encoded = ''
         if params != '':
-            params_encoded = urllib.urlencode(params)
+            params_encoded = parse.urlencode(params)
+
             if method == 'get':
               params_encoded = '?' + params_encoded
 
@@ -235,7 +276,7 @@ class LocalBitcoin:
         nonce = int(delta.total_seconds() * 1000)
 
         message = str(nonce) + self.hmac_auth_key + endpoint + params_encoded
-        signature = hmac.new(self.hmac_auth_secret, msg = message, digestmod = hashlib.sha256).hexdigest().upper()
+        signature = hmac.new(bytes(self.hmac_auth_secret, 'latin-1'), msg = bytes(message , 'latin-1'), digestmod = hashlib.sha256).hexdigest().upper()
 
         headers = {}
         headers['Apiauth-key'] = self.hmac_auth_key
@@ -247,9 +288,9 @@ class LocalBitcoin:
             response = requests.post(self.baseurl + endpoint, headers = headers, data = params)
 
         if self.debug == True:
-            print 'REQUEST: ' + self.baseurl + endpoint
-            print 'PARAMS: ' + str(params)
-            print 'METHOD: ' + method
-            print 'RESPONSE: ' + response.text
+            print('REQUEST: ' + self.baseurl + endpoint)
+            print('PARAMS: ' + str(params))
+            print('METHOD: ' + method)
+            print('RESPONSE: ' + response.text)
 
         return json.loads(response.text)['data']
